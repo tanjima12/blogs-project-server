@@ -1,7 +1,8 @@
 const express = require("express");
 const cors = require("cors");
+
 require("dotenv").config();
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 5006;
 app.use(express.json());
@@ -23,6 +24,7 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     const NewsCollection = client.db("recentNews").collection("NewsCollection");
+    const WishListCollection = client.db("recentNews").collection("WishList");
     // Send a ping to confirm a successful connection
 
     app.get("/addBlog", async (req, res) => {
@@ -52,6 +54,44 @@ async function run() {
       const result = await NewsCollection.insertOne(newBlog);
       res.send(result);
     });
+    app.get("/wishList/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+
+      // const cursor = await WishListCollection.find({ _id: new ObjectId(id) });
+      const wishlistItems = await cursor.toArray();
+      const blogIds = wishlistItems.map((item) => item.id);
+
+      const result = await NewsCollection.find({
+        _id: { $in: blogIds.map((id) => new ObjectId(id)) },
+      }).toArray();
+
+      console.log(result);
+      res.send(result);
+    });
+
+    app.post("/addToWishlist/:id", async (req, res) => {
+      const id = req.params.id;
+      const blog = req.body;
+
+      const existingWishlistItem = await WishListCollection.findOne({
+        _id: new ObjectId(id),
+      });
+
+      if (existingWishlistItem) {
+        res.status(400).json({ message: "Blog is already in the wishlist." });
+        return;
+      }
+
+      // const wishlistItem = {
+      //
+      //   blogId: new ObjectId(id),
+      // };
+
+      const result = await WishListCollection.insertOne(blog);
+      res.json(result);
+    });
+
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
