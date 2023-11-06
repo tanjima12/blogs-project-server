@@ -28,12 +28,20 @@ async function run() {
     app.get("/addBlog", async (req, res) => {
       // let query = {};
       let sortObj = {};
+      let queryObj = {};
+      const category = req.query.category;
+      console.log(category);
+
       const sortField = req.query.sortField;
       const sortOrder = req.query.sortOrder;
+
       if (sortField && sortOrder) {
         sortObj[sortField] = sortOrder;
       }
-      const cursor = NewsCollection.find().sort(sortObj);
+      if (category) {
+        queryObj.Category = category;
+      }
+      const cursor = NewsCollection.find(queryObj).sort(sortObj);
       const result = await cursor.toArray();
       res.send(result);
     });
