@@ -26,7 +26,14 @@ async function run() {
     // Send a ping to confirm a successful connection
 
     app.get("/addBlog", async (req, res) => {
-      const cursor = NewsCollection.find();
+      // let query = {};
+      let sortObj = {};
+      const sortField = req.query.sortField;
+      const sortOrder = req.query.sortOrder;
+      if (sortField && sortOrder) {
+        sortObj[sortField] = sortOrder;
+      }
+      const cursor = NewsCollection.find().sort(sortObj);
       const result = await cursor.toArray();
       res.send(result);
     });
