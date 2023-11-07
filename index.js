@@ -13,6 +13,13 @@ app.use(express.json());
 //     credentials: true,
 //   })
 // );
+// app.use(
+//   cors({
+//     origin: "http://localhost:5174",
+//     credentials: true,
+//   })
+// );
+
 app.use(
   cors({
     origin: ["http://localhost:5174", "http://localhost:5173"],
@@ -96,8 +103,8 @@ async function run() {
     // });
 
     app.get("/addToWishlist", async (req, res) => {
-      const userId = req.params.userId;
-      const wishlistItems = await WishListCollection.find({ userId }).toArray();
+      // const userId = req.params.userId;
+      const wishlistItems = await WishListCollection.find().toArray();
       res.send(wishlistItems);
     });
     // app.post("/addToWishlist/:userId/:blogId", async (req, res) => {
@@ -125,7 +132,7 @@ async function run() {
     //   res.json(result);
     // });
 
-    app.post("/addToWishlist", async (req, res) => {
+    app.post("/addToWishlist/:id", async (req, res) => {
       const id = req.params.id;
       const blog = req.body;
 
@@ -133,13 +140,13 @@ async function run() {
         _id: new ObjectId(id),
       });
 
-      // if (existingWishlistItem) {
-      //   res.status(400).json({ message: "Blog is already in the wishlist." });
-      //   return;
-      // }
+      if (existingWishlistItem) {
+        res.status(400).json({ message: "Blog is already in the wishlist." });
+        return;
+      }
 
-      // const result = await WishListCollection.insertOne(blog);
-      // res.json(result);
+      const result = await WishListCollection.insertOne(blog);
+      res.json(result);
     });
 
     //   // let query = {};
@@ -186,6 +193,37 @@ async function run() {
     //   const result = await NewsCollection.findOne(query);
     //   res.send(result);
     // });
+
+    app.get("/updateBlog/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      console.log(query);
+      const result = await NewsCollection.findOne(query);
+      console.log(result);
+      res.send(result);
+    });
+
+    //update
+    app.put("/update/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updatedBlog = req.body;
+      const nameBlog = {
+        $set: {
+          Title: updatedBlog.title,
+          Category: updatedBlog.Category,
+          ShortDescription: updatedBlog.ShortDescription,
+          time: updatedBlog.time,
+          PhotoUrl: updatedBlog.PhotoUrl,
+          email: updatedBlog.email,
+          name: updatedBlog.name,
+          Longdescription: updatedBlog.Longdescription,
+        },
+      };
+      const result = await NewsCollection.updateOne(filter, nameBlog, options);
+      res.send(result);
+    });
 
     await client.db("admin").command({ ping: 1 });
     console.log(
