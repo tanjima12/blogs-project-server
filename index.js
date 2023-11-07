@@ -37,6 +37,7 @@ async function run() {
     await client.connect();
     const NewsCollection = client.db("recentNews").collection("NewsCollection");
     const WishListCollection = client.db("recentNews").collection("WishList");
+    const CommentCollection = client.db("recentNews").collection("CommentInfo");
     // Send a ping to confirm a successful connection
 
     app.get("/addBlog", async (req, res) => {
@@ -72,6 +73,12 @@ async function run() {
       const result = await NewsCollection.findOne(query);
       res.send(result);
     });
+    // app.get("/comment/:blogId", async (req, res) => {
+    //   const blogId = req.params.blogId;
+    //   const query = { blogId };
+    //   const result = await CommentCollection.find(query).toArray();
+    //   res.send(result);
+    // });
     // app.get("/wishList/:id", async (req, res) => {
     //   const id = req.params.id;
     //   console.log(id);
@@ -126,14 +133,59 @@ async function run() {
         _id: new ObjectId(id),
       });
 
-      if (existingWishlistItem) {
-        res.status(400).json({ message: "Blog is already in the wishlist." });
-        return;
-      }
+      // if (existingWishlistItem) {
+      //   res.status(400).json({ message: "Blog is already in the wishlist." });
+      //   return;
+      // }
 
-      const result = await WishListCollection.insertOne(blog);
-      res.json(result);
+      // const result = await WishListCollection.insertOne(blog);
+      // res.json(result);
     });
+
+    //   // let query = {};
+    //   // let sortObj = {};
+    //   // let queryObj = {};
+    //   // const category = req.query.category;
+    //   // console.log(category);
+
+    //   // const sortField = req.query.sortField;
+    //   // const sortOrder = req.query.sortOrder;
+
+    //   // if (sortField && sortOrder) {
+    //   //   sortObj[sortField] = sortOrder;
+    //   // }
+    //   // if (category) {
+    //   //   queryObj.Category = category;
+    //   // }
+    //   const cursor = CommentCollection.find();
+    //   const result = await cursor.toArray();
+    //   res.send(result);
+    //   // const id = req.params.id;
+    //   // const query = { _id: new ObjectId(id) };
+    //   // const result = await CommentCollection.findOne(query);
+    //   // res.send(result);
+    // });
+    app.post("/comments", async (req, res) => {
+      const comment = req.body;
+      console.log(comment);
+
+      const result = await CommentCollection.insertOne(comment);
+      res.send(result);
+    });
+    app.get("/comments/:blogId", async (req, res) => {
+      const { blogId } = req.params;
+      // console.log(blogId);
+      const query = { blogId: blogId };
+      const cursor = await CommentCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+    // app.get("/blog/:blogId", async (res, req) => {
+    //   const blogId = req.params;
+    //   const query = { _id: new ObjectId(blogId) };
+    //   const result = await NewsCollection.findOne(query);
+    //   res.send(result);
+    // });
 
     await client.db("admin").command({ ping: 1 });
     console.log(
