@@ -6,7 +6,19 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 5006;
 app.use(express.json());
-app.use(cors());
+// app.use(cors());
+// app.use(
+//   cors({
+//     origin: ["http://localhost:5174"],
+//     credentials: true,
+//   })
+// );
+app.use(
+  cors({
+    origin: ["http://localhost:5174", "http://localhost:5173"],
+    credentials: true,
+  })
+);
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.2xzkprd.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -54,23 +66,59 @@ async function run() {
       const result = await NewsCollection.insertOne(newBlog);
       res.send(result);
     });
-    app.get("/wishList/:id", async (req, res) => {
+    app.get("/blogdetails/:id", async (req, res) => {
       const id = req.params.id;
-      console.log(id);
-
-      // const cursor = await WishListCollection.find({ _id: new ObjectId(id) });
-      const wishlistItems = await cursor.toArray();
-      const blogIds = wishlistItems.map((item) => item.id);
-
-      const result = await NewsCollection.find({
-        _id: { $in: blogIds.map((id) => new ObjectId(id)) },
-      }).toArray();
-
-      console.log(result);
+      const query = { _id: new ObjectId(id) };
+      const result = await NewsCollection.findOne(query);
       res.send(result);
     });
+    // app.get("/wishList/:id", async (req, res) => {
+    //   const id = req.params.id;
+    //   console.log(id);
 
-    app.post("/addToWishlist/:id", async (req, res) => {
+    //   // const cursor = await WishListCollection.find({ _id: new ObjectId(id) });
+    //   const wishlistItems = await cursor.toArray();
+    //   const blogIds = wishlistItems.map((item) => item.id);
+
+    //   const result = await NewsCollection.find({
+    //     _id: { $in: blogIds.map((id) => new ObjectId(id)) },
+    //   }).toArray();
+
+    //   console.log(result);
+    //   res.send(result);
+    // });
+
+    app.get("/addToWishlist", async (req, res) => {
+      const userId = req.params.userId;
+      const wishlistItems = await WishListCollection.find({ userId }).toArray();
+      res.send(wishlistItems);
+    });
+    // app.post("/addToWishlist/:userId/:blogId", async (req, res) => {
+    //   const userId = req.params.userId;
+    //   const blogId = req.params.blogId;
+    //   const blog = req.body;
+
+    //   // Check if the blog is already in the user's wishlist (you might want to do this)
+    //   const existingWishlistItem = await WishListCollection.findOne({
+    //     //   userId: userId,
+    //     blogId: blogId,
+    //   });
+
+    //   if (existingWishlistItem) {
+    //     res.status(400).json({ message: "Blog is already in the wishlist." });
+    //     return;
+    //   }
+
+    //   // Now you can store the blog information in the database
+    //   const wishlistItem = {
+    //     blog: blog, // Store the entire blog information
+    //   };
+
+    //   const result = await WishListCollection.insertOne(wishlistItem);
+    //   res.json(result);
+    // });
+
+    app.post("/addToWishlist", async (req, res) => {
       const id = req.params.id;
       const blog = req.body;
 
@@ -82,11 +130,6 @@ async function run() {
         res.status(400).json({ message: "Blog is already in the wishlist." });
         return;
       }
-
-      // const wishlistItem = {
-      //
-      //   blogId: new ObjectId(id),
-      // };
 
       const result = await WishListCollection.insertOne(blog);
       res.json(result);
