@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 var jwt = require("jsonwebtoken");
-const cokieParser = require("cookie-parser");
+// const cookieParser = require("cookie-parser");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const cookieParser = require("cookie-parser");
@@ -25,7 +25,13 @@ app.use(cookieParser());
 
 app.use(
   cors({
-    origin: ["http://localhost:5174", "http://localhost:5173"],
+    origin: [
+      // "http://localhost:5174",
+      // "http://localhost:5173",
+      // "http://localhost:5175",
+      "https://travel-blog-f80f8.web.app",
+      "https://travel-blog-f80f8.firebaseapp.com",
+    ],
     credentials: true,
   })
 );
@@ -40,11 +46,20 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
+const logger = (req, res, next) => {
+  console.log("log info", req.method, req.url);
+  next();
+};
+const verifyToken = (req, res, next) => {
+  const token = req.cookies.token;
+  console.log("token in the middleware", token);
+  next();
+};
 
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     const NewsCollection = client.db("recentNews").collection("NewsCollection");
     const WishListCollection = client.db("recentNews").collection("WishList");
     const CommentCollection = client.db("recentNews").collection("CommentInfo");
@@ -62,6 +77,11 @@ async function run() {
           secure: false,
         })
         .send({ success: true });
+    });
+    app.post("/logout", async (req, res) => {
+      const user = req.body;
+      console.log("logged out", user);
+      res.clearCookie("token", { maxAge: 0 }).send({ success: true });
     });
 
     app.get("/addBlog", async (req, res) => {
@@ -119,11 +139,19 @@ async function run() {
     //   res.send(result);
     // });
 
-    app.get("/addToWishlist", async (req, res) => {
+    app.get("/addToWishlist", logger, verifyToken, async (req, res) => {
       // const userId = req.params.userId;
+      let queryObj = {};
+      const email = req.query.email;
+      if (email) {
+        queryObj.email = email;
+        console.log("query", queryObj);
+      }
+
       console.log("tok tok token", req.cookies.token);
-      const wishlistItems = await WishListCollection.find().toArray();
+      const wishlistItems = await WishListCollection.find(queryObj).toArray();
       res.send(wishlistItems);
+      console.log(wishlistItems);
     });
 
     //   const userId = req.params.userId;
