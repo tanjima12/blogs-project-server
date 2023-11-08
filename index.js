@@ -1,11 +1,14 @@
 const express = require("express");
 const cors = require("cors");
-
+var jwt = require("jsonwebtoken");
+const cokieParser = require("cookie-parser");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const cookieParser = require("cookie-parser");
 const app = express();
 const port = process.env.PORT || 5006;
 app.use(express.json());
+app.use(cookieParser());
 // app.use(cors());
 // app.use(
 //   cors({
@@ -47,6 +50,20 @@ async function run() {
     const CommentCollection = client.db("recentNews").collection("CommentInfo");
     // Send a ping to confirm a successful connection
 
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "1h",
+      });
+      console.log(user);
+      res
+        .cookie("token", token, {
+          httpOnly: true,
+          secure: false,
+        })
+        .send({ success: true });
+    });
+
     app.get("/addBlog", async (req, res) => {
       // let query = {};
       let sortObj = {};
@@ -80,7 +97,7 @@ async function run() {
       const result = await NewsCollection.findOne(query);
       res.send(result);
     });
-    // app.get("/comment/:blogId", async (req, res) => {
+
     //   const blogId = req.params.blogId;
     //   const query = { blogId };
     //   const result = await CommentCollection.find(query).toArray();
@@ -104,10 +121,11 @@ async function run() {
 
     app.get("/addToWishlist", async (req, res) => {
       // const userId = req.params.userId;
+      console.log("tok tok token", req.cookies.token);
       const wishlistItems = await WishListCollection.find().toArray();
       res.send(wishlistItems);
     });
-    // app.post("/addToWishlist/:userId/:blogId", async (req, res) => {
+
     //   const userId = req.params.userId;
     //   const blogId = req.params.blogId;
     //   const blog = req.body;
